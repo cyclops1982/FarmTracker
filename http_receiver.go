@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"time"
+	"fmt"
+	"os"
+	"io"
 	"io/ioutil"
 )
 
@@ -22,8 +25,46 @@ func Handle404(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request) {
-	log.Println("Normal request")
-	http.NotFound(w, r)
+	vars := mux.Vars(r)
+	event, eventexists := vars["event"]
+	if eventexists == false {
+		log.Fatalln("Request should have a querystring parameter for 'event', but we couldn't find it.")
+		return
+	}
+	if event == "" {
+		w.WriteHeader(400)
+		w.Write([]byte("We're expecting a value in the 'event' parameter."))
+		return
+	}
+	if r.Method != "POST" {
+		w.WriteHeader(405)
+		w.Write([]byte("This web service expects a POST."))
+		return
+	}
+
+
+	// Format the filename. Time & event.
+	filename := fmt.Sprintf("%s_%s.json", time.Now().Format(time.RFC3339Nano), event)
+
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	//f, err := os.Create(filename)
+	if err != nil {
+		log.Println("ERROR - Failed to create file: ", err)
+		w.WriteHeader(500)
+		w.Write([]byte("Couldn't create the local file, please try again."))
+		return
+	}
+
+	copiedBytes, copyErr := io.Copy(f, r.Body)
+	if copyErr != nil {
+		log.Println("ERROR - Failed to copy request body: ", copyErr)
+		w.WriteHeader(500)
+		w.Write([]byte("Couldn't copy request body."))
+		return
+	}
+	f.Close()
+	w.WriteHeader(200)
+	w.Write([]byte(string(copiedBytes)))
 	return
 }
 

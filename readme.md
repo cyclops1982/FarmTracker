@@ -6,3 +6,11 @@ The initial goals are:
 - Water sensors
 
 
+## Technical notes
+
+Go Version:
+```
+$ go version
+go version go1.15.6 linux/amd64
+```
+
