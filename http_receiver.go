@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"github.com/google/uuid"
 	"strings"
+	"flag"
 )
 
 func GenUUID() string {
@@ -79,15 +80,20 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
-	log.Println("Starting http service....")
+	// parameters
+	var httpPort = flag.Int("port", 9090, "The port to bind on for the HTTP server. Default is 9090.")
+	var ipAddress = flag.String("address", "0.0.0.0", "The IP address to bind on, default is 0.0.0.0.")
+	flag.Parse()
 
 	router := mux.NewRouter()
 	router.Path("/").Queries("event", "{event}").HandlerFunc(HandleRequest)
 	router.HandleFunc("/", Handle404)
 
+
+	log.Printf("Starting HTTP server on %s:%d\n", *ipAddress, *httpPort)
 	srv := &http.Server{
 		Handler: router,
-		Addr: ":8989",
+		Addr: fmt.Sprintf("%s:%d", *ipAddress, *httpPort),
 		// Timeouts to avoid overloading the server
 		WriteTimeout: 5 * time.Second,
 		ReadTimeout: 15 * time.Second,
