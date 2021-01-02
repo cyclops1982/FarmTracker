@@ -9,7 +9,15 @@ import (
 	"os"
 	"io"
 	"io/ioutil"
+	"github.com/google/uuid"
+	"strings"
 )
+
+func GenUUID() string {
+	uuidWithHyphen := uuid.New()
+	uuid := strings.Replace(uuidWithHyphen.String(), "-", "", -1)
+	return uuid
+}
 
 func Handle404(w http.ResponseWriter, r *http.Request) {
 	log.Println("404 request")
@@ -46,7 +54,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 
 	// Format the filename. Time & event.
-	filename := fmt.Sprintf("%s_%s.json", time.Now().Format(time.RFC3339Nano), event)
+	filename := fmt.Sprintf("%s_%s_%s.json", time.Now().Format(time.RFC3339Nano), event, GenUUID())
 
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0755)
 	if err != nil {
