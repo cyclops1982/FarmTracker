@@ -54,7 +54,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	dirname := time.Now().Format("2006/01/02/")
+	dirname := fmt.Sprintf("%s%s", g_outputDir, time.Now().Format("2006/01/02/"))
 	filename := fmt.Sprintf("%s%s_%s_%s.json", dirname, time.Now().Format("15-04-05.99999999"), event, GenUUID())
 
 	err := os.MkdirAll(dirname, 0755)
@@ -86,18 +86,23 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-
+var g_outputDir string
 func main() {
 	// parameters
 	var httpPort = flag.Int("port", 9090, "The port to bind on for the HTTP server. Default is 9090.")
 	var ipAddress = flag.String("address", "0.0.0.0", "The IP address to bind on, default is 0.0.0.0.")
+	flag.StringVar(&g_outputDir, "outputdir", "dumps/", "The path to store files. A directory structure YYYY/MM/DD/ will be created in this folder.")
 	flag.Parse()
 
 	router := mux.NewRouter()
 	router.Path("/").Queries("event", "{event}").HandlerFunc(HandleRequest)
 	router.HandleFunc("/", Handle404)
 
-
+	// Check base path
+	err := os.MkdirAll(g_outputDir, 0755)
+	if err != nil {
+		log.Fatal("Couldn't create outputdir.", err)
+	}
 	log.Printf("Starting HTTP server on %s:%d\n", *ipAddress, *httpPort)
 	srv := &http.Server{
 		Handler: router,
