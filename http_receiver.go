@@ -54,8 +54,16 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	// Format the filename. Time & event.
-	filename := fmt.Sprintf("%s_%s_%s.json", time.Now().Format(time.RFC3339Nano), event, GenUUID())
+	dirname := time.Now().Format("2006/01/02/")
+	filename := fmt.Sprintf("%s%s_%s_%s.json", dirname, time.Now().Format("15-04-05.99999999"), event, GenUUID())
+
+	err := os.MkdirAll(dirname, 0755)
+	if err != nil {
+		log.Println("500 - ERROR - Failed to create directory ", dirname, "Error:", err)
+		w.WriteHeader(500)
+		w.Write([]byte("Couldn't create directory for storage."))
+		return
+	}
 
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0755)
 	if err != nil {
