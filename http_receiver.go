@@ -55,7 +55,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 
 	dirname := fmt.Sprintf("%s%s", g_outputDir, time.Now().Format("2006/01/02/"))
-	filename := fmt.Sprintf("%s%s_%s_%s.json", dirname, time.Now().Format("15-04-05.99999999"), event, GenUUID())
+	filename := fmt.Sprintf("%s%s_%s_%s.json", dirname, time.Now().Format(time.RFC3339Nano), event, GenUUID())
 
 	err := os.MkdirAll(dirname, 0755)
 	if err != nil {
