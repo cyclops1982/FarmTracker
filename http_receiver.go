@@ -83,6 +83,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(200)
 	w.Write([]byte(string(copiedBytes)))
+	log.Println("200 - Received ", copiedBytes)
 	return
 }
 
