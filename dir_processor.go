@@ -14,6 +14,7 @@ import (
 	"net"
 	"fmt"
 	"encoding/json"
+	"encoding/binary"
 	"io/ioutil"
 	"bytes"
 	"strings"
@@ -102,6 +103,10 @@ func HandleClient(con net.Conn) {
 			log.Println("JSON payload is not for application 1. Skipping.")
 			continue
 		}*/
+		// Send out 2 bytes that tell us how long the message will be
+		length := make([]byte, 2)
+		binary.BigEndian.PutUint16(length, uint16(len(bytes)))
+		_, err = con.Write(length)
 		writenbytes, err := con.Write(bytes)
 		if err != nil {
 			log.Println("Failed to write bytes. Disconnecting. Error was: ", err)
