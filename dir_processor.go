@@ -45,6 +45,7 @@ func HandleClient(con net.Conn) {
 	defer con.Close()
 
 	// We want to understand a 'command' on what the filtering would be, or just a dot.
+	//TODO: Add a unixtime to this. So the command should become 'unixtime.filter.' - We then start sending files that come *after* that unixtime.
 	tmp := make([]byte, 30)
 	_, err := con.Read(tmp)
 	if err != nil {
