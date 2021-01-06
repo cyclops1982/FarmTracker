@@ -8,6 +8,8 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
+	"github.com/cyclops1982/farmtracker/messagestructs"
+	"bytes"
 )
 
 
@@ -44,21 +46,35 @@ func main() {
 			log.Fatal("Really expected the correct amount of bytes...")
 		}
 
-		// Chop the buffer to something smaller so we can correctly convert it to JSON
+		// Convert received stuff to JSON.
+		//TODO: make this something more strongly typed - need to check what happens if our struct is not 100% aligned.
 		var jsonData interface{}
 		err = json.Unmarshal(msgData, &jsonData)
 		if err != nil {
 			log.Println("Failed to parse JSON:", err)
 			continue
 		}
+		// get the properties that we'd like to have.
 		realData := jsonData.(map[string]interface{})
 		base64data, ok := realData["data"].(string)
 		if ok == false {
-			log.Println("Failed to convert data to string.")
+			log.Println("Failed to convert data to string. Skipping.")
 			continue
 		}
-		data, err := base64.StdEncoding.DecodeString(base64data)
-		deveui := realData["devEUI"]
-		log.Printf("devEUI: %s\nBase64data:%s\nDATA: %s", deveui, base64data, data)
+
+		// convert the base64 string to a []byte
+		bs, err := base64.StdEncoding.DecodeString(base64data)
+		if err != nil {
+			log.Printf("Failed to get decode base64 string '%s'. Skipping.\n", base64data)
+			continue
+		}
+		var loraMsg loramsgs.SodaqUniversalTracker
+		byteReader := bytes.NewReader(bs)
+		err = binary.Read(byteReader, binary.LittleEndian, &loraMsg)
+		if err != nil {
+			log.Printf("Couldn't unpack binary array from base64 data ('%s') into Lora Msg Struct. Skipping.\n", base64data)
+			continue
+		}
+		log.Printf("Unixtime: %d\nVoltage: %d\nLat/Long: %q/%q\n", loraMsg.Unixtime, loraMsg.RawVoltage, loraMsg.Latitude, loraMsg.Longitude)
 	}
 }
