@@ -1,3 +1,11 @@
+/* 
+Simple utility to parse base64 string that we receive from Chripstack. 
+The base64 string is the real data that we get from the lora device.
+We can use the binary package to directly convert the []byte into a struct of the correct format.
+
+This little program demonstrates that, and acts as utility to quickly see what the base64 content would really be.
+
+*/
 package main
 
 
@@ -21,8 +29,6 @@ func main() {
 		fmt.Printf("Failed to decode base64: %s\n", err)
 	}
 	fmt.Printf("Bytes: %q\n", bs)
-	i := binary.LittleEndian.Uint32(bs[0:4])
-	fmt.Printf("In int: %d\n", i)
 
 	var lora loramsgs.SodaqUniversalTracker
 	reader := bytes.NewReader(bs)
