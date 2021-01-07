@@ -10,14 +10,46 @@ import (
 	"fmt"
 	"github.com/cyclops1982/farmtracker/messagestructs"
 	"bytes"
+	"time"
+	"context"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 
+func CreateConnection(dsn *string) *sql.DB {
+	var pool *sql.DB
+	var err error
+	// Setup SQL connection
+	pool, err = sql.Open("mysql", *dsn)
+	if err != nil {
+		log.Fatalf("Failed to connect to SQL: %v\n", err)
+	}
+	pool.SetConnMaxLifetime(time.Minute * 3)
+	pool.SetMaxOpenConns(10)
+	pool.SetMaxIdleConns(10)
+
+	return pool
+}
+
+func CheckConnection(ctx context.Context, pool *sql.DB) {
+	ctx, cancel := context.WithTimeout(ctx, 1 * time.Second)
+	defer cancel()
+
+	if err := pool.PingContext(ctx); err != nil {
+		log.Fatalf("PingContext() failed - Unable to connect to database: %v\n", err)
+	}
+
+	if err := pool.Ping(); err != nil {
+		log.Fatalf("Ping() failed - unable to connect to databsae: %v\n", err)
+	}
+}
 
 func main() {
+	var err error
 	var ipAddress = flag.String("server", "127.0.0.1", "The IP address (or hostname) of the server to connect to. Default is 127.0.0.1.")
 	var tcpPort = flag.Int("port", 29000, "The port to use for the server connection. Default is 29000.")
-	//var sqlConString  = flag.String("sqlconstring", "FarmTracker:MyGreatPassword@localhost/FarmTracker", "The DSN Connection String to use to connect to the MySQL DB.")
+	var sqlConString  = flag.String("sqlconstring", "farmtracker:MyGreatPassword@tcp(localhost)/FarmTracker", "The DSN Connection String to use to connect to the MySQL DB.")
 	flag.Parse()
 
 	addr := fmt.Sprintf("%s:%d", *ipAddress, *tcpPort)
@@ -26,8 +58,21 @@ func main() {
 		log.Fatalf("Failed to connect to %s. Exiting.", addr)
 	}
 
-	con.Write([]byte("up.")) // for now, just send a '.' so we get everything.
+	// Create SQL connection & context
+	pool := CreateConnection(sqlConString)
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
 
+	CheckConnection(ctx, pool)
+
+	// Prepare the insert statement
+	sqlInsert, err := pool.Prepare("INSERT INTO Location(DeviceId, Location) VALUES((SELECT Id FROM Device WHERE DeviceEUI = ?), ST_GeomFromText(?))")
+	defer sqlInsert.Close()
+	if err != nil {
+		log.Fatalf("Failed to prepare INSERT statement: %v\n", err)
+	}
+
+	con.Write([]byte("up.")) // for now, just send a '.' so we get everything.
 	msgLength := make([]byte, 2)
 	for {
 		nBytes, err := con.Read(msgLength)
@@ -56,6 +101,12 @@ func main() {
 		}
 		// get the properties that we'd like to have.
 		realData := jsonData.(map[string]interface{})
+		devEUI, ok := realData["devEUI"].(string)
+		if ok == false {
+			log.Println("Failed to convert data to string. Skipping.")
+			continue
+		}
+		log.Println("DEVEUI: ",devEUI)
 		base64data, ok := realData["data"].(string)
 		if ok == false {
 			log.Println("Failed to convert data to string. Skipping.")
@@ -75,6 +126,11 @@ func main() {
 			log.Printf("Couldn't unpack binary array from base64 data ('%s') into Lora Msg Struct. Skipping.\n", base64data)
 			continue
 		}
-		log.Printf("Unixtime: %d\nVoltage: %d\nLat/Long: %q/%q\n", loraMsg.Unixtime, loraMsg.RawVoltage, loraMsg.Latitude, loraMsg.Longitude)
+		log.Printf("Unixtime: %d\nVoltage: %d\nLat/Long: %d/%d\n", loraMsg.Unixtime, loraMsg.RawVoltage, loraMsg.Latitude, loraMsg.Longitude)
+		_, err = sqlInsert.Exec(devEUI, fmt.Sprintf("POINT(%d %d)", loraMsg.Latitude, loraMsg.Longitude))
+		if err != nil {
+			log.Printf("FAILED to insert location into DB: %v\n",err)
+			continue
+		}
 	}
 }
