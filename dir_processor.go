@@ -1,8 +1,3 @@
-/*
-TODO:
-	- Provide a command line parameter to indicate how long back we should read.
-	  If nothing provided, then start reading from 'now'. This requires the FindFiles to understand date/time stuff.
-*/
 package main
 
 import (
@@ -20,8 +15,8 @@ import (
 	"strings"
 )
 
-func FindFiles(ch chan string, path string, filter string) {
-	foundDirs := make(map[string]bool)
+func FindFiles(ch chan string, path string, filter string, unixtime time.Time) {
+	foundFiles := make(map[string]bool)
 	for {
 		filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -30,9 +25,19 @@ func FindFiles(ch chan string, path string, filter string) {
 			}
 
 			if info.IsDir() == false && (filter == "" || strings.Contains(info.Name(), filter))  {
-				if foundDirs[p] == false {
+				underscoreloc := strings.IndexRune(info.Name(), '_')
+				if underscoreloc == -1 {
+					log.Printf("Couldn't get date/time from file: %s\n", p)
+					return nil
+				}
+				filedatetime, err := time.Parse(time.RFC3339Nano, info.Name()[:underscoreloc])
+				if (err != nil) {
+					log.Printf("Couldn't parse date/time from file: %s\n", p)
+					return nil
+				}
+				if (filedatetime.After(unixtime) && foundFiles[p] == false) {
 					ch <- p
-					foundDirs[p] = true
+					foundFiles[p] = true
 				}
 			}
 			return nil
@@ -45,10 +50,22 @@ func FindFiles(ch chan string, path string, filter string) {
 func HandleClient(con net.Conn) {
 	defer con.Close()
 
-	// We want to understand a 'command' on what the filtering would be, or just a dot.
-	//TODO: Add a unixtime to this. So the command should become 'unixtime.filter.' - We then start sending files that come *after* that unixtime.
+	var err error
+
+	// We're reading a few bytes to get some data that we need.
+	// That would first be a uint64 (for a unixtime)
+	tmpUTime := make([]byte, 8)
+	_, err = con.Read(tmpUTime)
+	if err != nil {
+		log.Printf("Expected 8 bytes (uint64) from %s. Got an error: %v. Disconnecting.\n", con.RemoteAddr(), err)
+		return
+	}
+	timeInt64 := int64(binary.LittleEndian.Uint64(tmpUTime))
+	unixTime := time.Unix(timeInt64, 0)
+	log.Printf("The time: %v - %v\n", timeInt64, unixTime)
+
 	tmp := make([]byte, 30)
-	_, err := con.Read(tmp)
+	_, err = con.Read(tmp)
 	if err != nil {
 		log.Println("Failed to read from client",con.RemoteAddr(),". Disconnecting. Error: ", err)
 		return
@@ -80,7 +97,7 @@ func HandleClient(con net.Conn) {
 
 	// Now let's find some files in a seperate thread.
 	ch := make(chan string)
-	go FindFiles(ch, inputdir, filter)
+	go FindFiles(ch, inputdir, filter, unixTime)
 
 	// Read from the channel and send out the content.
 	for file := range ch {
