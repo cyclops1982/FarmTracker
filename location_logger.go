@@ -47,9 +47,11 @@ func CheckConnection(ctx context.Context, pool *sql.DB) {
 
 func main() {
 	var err error
-	var ipAddress = flag.String("server", "127.0.0.1", "The IP address (or hostname) of the server to connect to. Default is 127.0.0.1.")
-	var tcpPort = flag.Int("port", 29000, "The port to use for the server connection. Default is 29000.")
+	var ipAddress = flag.String("server", "127.0.0.1", "The IP address (or hostname) of the server to connect to.")
+	var tcpPort = flag.Int("port", 29000, "The port to use for the server connection.")
 	var sqlConString  = flag.String("sqlconstring", "farmtracker:MyGreatPassword@tcp(localhost)/FarmTracker", "The DSN Connection String to use to connect to the MySQL DB.")
+	//TODO: Add a 'from' parameter that just takes an amount of hours
+	var fromUnixtime = flag.Int64("fromUnixtime", 0, "Set the unix timestamp from which we should receive messages.")
 	flag.Parse()
 
 	addr := fmt.Sprintf("%s:%d", *ipAddress, *tcpPort)
@@ -72,7 +74,10 @@ func main() {
 		log.Fatalf("Failed to prepare INSERT statement: %v\n", err)
 	}
 
-	con.Write([]byte("up.")) // for now, just send a '.' so we get everything.
+	unixtimebytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(unixtimebytes, uint64(*fromUnixtime))
+	con.Write(unixtimebytes)
+	con.Write([]byte("up."))
 	msgLength := make([]byte, 2)
 	for {
 		nBytes, err := con.Read(msgLength)
