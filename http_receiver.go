@@ -22,7 +22,7 @@ func GenUUID() string {
 
 func Handle404(w http.ResponseWriter, r *http.Request) {
 	log.Println("404 request")
-	filedata, err := ioutil.ReadFile("404.html")
+	filedata, err := ioutil.ReadFile("html/404.html")
 	if err != nil {
 		log.Println("ERROR - Couldn't read 404.html file.. returning standard http.NotFound")
 		http.NotFound(w, r)
