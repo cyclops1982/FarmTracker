@@ -6,6 +6,9 @@
     <title>FarmTracker</title>
     <link rel="stylesheet" href="/css/reset.css" />
     <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/leaflet.css" />
+    <script src="/js/leaflet.js?v=1.7.1"></script>
+    <script src="/js/ft.js"></script>
   </head>
 
   <body>
@@ -32,7 +35,8 @@
       <div class="content">
         <div class="contentblock">
           <h1>MAP</h1>
-		  <p>Show a MAP with all the items on there...</p>
+          <div id="mainmap"></div>
+		      <p>Show a MAP with all the items on there...</p>
 		</div>
         <div class="contentblock">
           <h1>Table</h1>

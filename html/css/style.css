@@ -8,6 +8,11 @@
     max-width: 500px;
 }
 
+#mainmap { 
+  height: 320px; 
+}
+
+
 .topbar {
     height: 40px;
     display: block;
