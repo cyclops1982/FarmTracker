@@ -33,4 +33,5 @@ The following tools/apps exist:
 
 ## Other notes
 
--  Great way to demonstrate leaflet layers: https://leaflet-extras.github.io/leaflet-providers/preview/
+- Great way to demonstrate leaflet layers: https://leaflet-extras.github.io/leaflet-providers/preview/
+- Nice table implementation: https://codepen.io/geoffyuen/pen/FCBEg
