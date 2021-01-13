@@ -1,0 +1,16 @@
+:root {
+   --main-bg-color: #fff;
+   --main-text-color: #333;
+   --main-highlight-color: #f1cf00;
+   --first-bg-color: #367c2b;
+   --first-text-color: #f1cf00;
+   --first-highlight-color: #f1cf00;
+   --second-bg-color: #333;
+   --second-text-color: #d5d5d5;
+   --second-highlight-color: #d5d5d5;
+   --third-bg-color: #d5d5d5;
+   --third-text-color: #666;
+   --third-highlight-color: #333; /* Swap these? */
+
+   --topbar-height: 40px;
+}
