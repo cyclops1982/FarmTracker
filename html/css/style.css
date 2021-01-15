@@ -1,14 +1,26 @@
-/* Mobile first development - ahum  */
 .sitecontainer {
-   max-width: 1300px;
+   max-width: 1200px; /* Mobile first development - ahum  */
    margin: auto;
    font-size: 1.125em;
    font-family: Segoe UI, Roboto, Oxygen-Sans, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;
 }
 
+@media only screen and (min-width: 600px) {
+   #mainmap {
+      height: 600px;
+   }
+}
+
+@media only screen and (max-width: 600px) {
+   #mainmap {
+      height: 320px;
+   }
+}
+
 #mainmap {
-   height: 320px;
    z-index: 1;
+   border: 1px solid var(--main-text-color);
+   border-radius: 0.15em;
 }
 
 /* General content */
