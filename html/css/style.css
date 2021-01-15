@@ -170,13 +170,14 @@ td.right {
 }
 
 #menuToggle input:checked ~ div.burgers > span:first-child {
-   transform: rotate(45deg) translate(-2px, -1px);
+   transform: translate(0px, 9px) rotate(45deg);
 }
 #menuToggle input:checked ~ div.burgers > span:nth-child(2) {
    opacity: 0;
 }
+
 #menuToggle input:checked ~ div.burgers > span:last-child {
-   transform: rotate(-45deg) translate(0, -1px);
+   transform: translate(00px, -9px) rotate(-45deg);
 }
 
 /* Menu stuff below here. See https://codepen.io/erikterwan/pen/EVzeRP */
