@@ -88,11 +88,9 @@ input {
    margin: 0;
    padding: 0;
    border: 0;
-   font-size: 100%;
    font: inherit;
    vertical-align: baseline;
    color: var(--main-text-color);
-   font-family: Segoe UI, Roboto, Oxygen-Sans, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;
 }
 /* HTML5 display-role reset for older browsers */
 article,

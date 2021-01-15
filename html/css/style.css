@@ -2,10 +2,13 @@
 .sitecontainer {
    max-width: 1300px;
    margin: auto;
+   font-size: 1.125em;
+   font-family: Segoe UI, Roboto, Oxygen-Sans, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;
 }
 
 #mainmap {
    height: 320px;
+   z-index: 1;
 }
 
 /* General content */
@@ -73,9 +76,9 @@ td.right {
    height: var(--topbar-height);
    display: block;
    position: sticky;
-   z-index: 10000;
    top: 0;
    background-color: var(--first-bg-color);
+   z-index: 2;
 }
 
 .topbar p {
@@ -90,7 +93,6 @@ td.right {
 #menuToggle {
    display: block;
    position: absolute;
-   z-index: 2001;
    width: 100%;
 }
 
@@ -102,14 +104,15 @@ td.right {
    display: block;
    cursor: pointer;
    position: absolute;
+   z-index: 1001; /* just above map and everything else*/
 }
 
 #menuToggle > div.burgers {
-   margin-top: 8px;
    position: absolute;
-   top: 0px;
+   height: var(--topbar-height);
+   top: 10px;
    left: 5px;
-   z-index: -1;
+   margin: auto;
 }
 
 /* The actual lines of the hamburger */
@@ -121,15 +124,12 @@ td.right {
    position: relative;
    background: var(--first-highlight-color);
    border-radius: 3px;
-
-   z-index: 2001;
 }
 
 #menu {
    margin-top: var(--topbar-height);
    background: var(--first-text-color);
    list-style-type: none;
-   -webkit-font-smoothing: antialiased;
 }
 
 #menu li {
@@ -138,137 +138,33 @@ td.right {
    line-height: 1.5em;
 }
 
+#menuToggle a {
+   text-decoration: none;
+   padding-left: 0.5em;
+}
+
+#menuToggle li:hover {
+   background-color: var(--first-bg-color);
+}
+
 #menuToggle input:checked ~ ul {
    visibility: visible;
+   height: 100%;
 }
 
 #menuToggle input ~ ul {
    visibility: hidden;
+   height: 0px;
 }
 
-#menuToggle input:checked ~ span {
-   opacity: 1;
+#menuToggle input:checked ~ div.burgers > span:first-child {
    transform: rotate(45deg) translate(-2px, -1px);
-   background: var(--second-bg-color);
 }
-
-#menuToggle input:checked ~ span:nth-last-child(3) {
+#menuToggle input:checked ~ div.burgers > span:nth-child(2) {
    opacity: 0;
-   transform: rotate(0deg) scale(0, 0);
 }
-
-#menuToggle input:checked ~ span:nth-last-child(2) {
+#menuToggle input:checked ~ div.burgers > span:last-child {
    transform: rotate(-45deg) translate(0, -1px);
 }
+
 /* Menu stuff below here. See https://codepen.io/erikterwan/pen/EVzeRP */
-/*
-
-#menuToggle {
-   display: block;
-   position: relative;
-   top: 7px;
-   left: 5px;
-
-   z-index: 2001;
-
-   -webkit-user-select: none;
-   user-select: none;
-}
-
-#menuToggle a {
-   text-decoration: none;
-   color: #232323;
-
-   transition: color 0.3s ease;
-}
-
-#menuToggle a:hover {
-   color: var(--second-highlight-color);
-}
-
-#menuToggle input {
-   display: block;
-   width: 40px;
-   height: 32px;
-   position: absolute;
-   top: -7px;
-   left: -5px;
-
-   cursor: pointer;
-
-   opacity: 0; 
-   z-index: 2002; 
-
-   -webkit-touch-callout: none;
-}
-
-
-#menuToggle span {
-   display: block;
-   width: 33px;
-   height: 4px;
-   margin-bottom: 5px;
-   position: relative;
-
-   background: var(--first-highlight-color);
-   border-radius: 3px;
-
-   z-index: 2001;
-
-   transform-origin: 4px 0px;
-
-   transition: transform 0.5s cubic-bezier(0.77, 0.2, 0.05, 1), background 0.5s cubic-bezier(0.77, 0.2, 0.05, 1),
-      opacity 0.55s ease;
-}
-
-#menuToggle span:first-child {
-   transform-origin: 0% 0%;
-}
-
-#menuToggle span:nth-last-child(2) {
-   transform-origin: 0% 100%;
-}
-
-#menuToggle input:checked ~ span {
-   opacity: 1;
-   transform: rotate(45deg) translate(-2px, -1px);
-   background: var(--second-bg-color);
-}
-
-
-#menuToggle input:checked ~ span:nth-last-child(3) {
-   opacity: 0;
-   transform: rotate(0deg) scale(0.2, 0.2);
-}
-
-#menuToggle input:checked ~ span:nth-last-child(2) {
-   transform: rotate(-45deg) translate(0, -1px);
-}
-
-#menu {
-   position: absolute;
-   width: 300px;
-   margin: -100px 0 0 -50px;
-   padding: 50px;
-   padding-top: 125px;
-
-   background: var(--first-text-color);
-   list-style-type: none;
-   -webkit-font-smoothing: antialiased;
-
-   transform-origin: 0% 0%;
-   transform: translate(-100%, 0);
-
-   transition: transform 0.5s cubic-bezier(0.77, 0.2, 0.05, 1);
-}
-
-#menu li {
-   padding: 10px 0;
-   font-size: 1.5em;
-   color: var(--second-text-color);
-}
-
-#menuToggle input:checked ~ ul {
-   transform: none;
-}
-*/
