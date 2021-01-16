@@ -151,6 +151,7 @@ td.right {
    font-size: 1.5em;
    color: var(--second-text-color);
    line-height: 1.5em;
+   border-radius: var(--first-border-radius);
 }
 
 #menuToggle a {
@@ -170,6 +171,7 @@ td.right {
 #menuToggle input ~ ul {
    visibility: hidden;
    height: 0px;
+   border-radius: var(--first-border-radius);
 }
 
 #menuToggle input:checked ~ div.burgers > span:first-child {

@@ -38,7 +38,7 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fileInfo, err = os.Stat(path)
 	if os.IsNotExist(err) || fileInfo.IsDir() {
 		// If we can't find the file, then we serve the 404 page, which is also a template.
-		w.WriteHeader(404);
+		w.WriteHeader(http.StatusNotFound);
 		fileInfo, _ = os.Stat(filepath.Join(h.staticPath, "404.html"))
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -46,7 +46,6 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filename := fileInfo.Name()
-	log.Printf("Filename: %s - %s\n", fileInfo.Name(), filename)
 	if filepath.Ext(filename) == ".html" {
 		var parsedFile *template.Template
 		globPath := filepath.Join(h.staticPath, "*.html")
@@ -59,10 +58,12 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		err = parsedFile.ExecuteTemplate(w, filename[:len(filename) - 5] ,nil) // -5 == len(".html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	 } else {
 		// otherwise, use http.FileServer to serve the static content like CSS/JS stuff
 		http.FileServer(http.Dir(h.staticPath)).ServeHTTP(w, r)
+		return
 	}
 }
 
