@@ -1,0 +1,51 @@
+{{define "header"}}
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>FarmTracker</title>
+      <link rel="stylesheet" href="/css/cssvariables.css" />
+      <link rel="stylesheet" href="/css/reset.css" />
+      <link rel="stylesheet" href="/css/style.css" />
+      <link
+         rel="stylesheet"
+         href="/css/leaflet.css"
+         integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+         crossorigin="anonymous"
+      />
+      <script
+         src="/js/leaflet.js?v=1.7.1"
+         integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+         crossorigin="anonymous"
+      ></script>
+      <script src="/js/ft.js"></script>
+   </head>
+</html>
+<body>
+   <div class="sitecontainer">
+      <div class="topbar">
+         <nav role="navigation">
+            <div id="menuToggle">
+               <!-- Hamburger -->
+               <input type="checkbox" />
+               <div class="burgers">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+               </div>
+               <!-- The menu -->
+
+               <ul id="menu">
+                  <li><a href="/">Home</a></li>
+                  <li><a href="#">Settings</a></li>
+                  <li><a href="#">About</a></li>
+                  <li><a href="#">Help</a></li>
+               </ul>
+            </div>
+         </nav>
+         <p>FarmTracker</p>
+      </div>
+      {{ end }}
+   </div>
+</body>

@@ -7,23 +7,10 @@ import (
 	"net/http"
 	"time"
 	"fmt"
-	"io/ioutil"
 	"flag"
 	"path/filepath"
+	"html/template"
 )
-
-func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("404 - %s request for '%s' from %s\n", r.Method, r.URL.Path, r.RemoteAddr)
-	filedata, err := ioutil.ReadFile("html/404.html")
-	if err != nil {
-		log.Println("ERROR - Couldn't read 404.html file.. returning standard http.NotFound")
-		http.NotFound(w, r)
-		return
-	}
-	w.WriteHeader(404)
-	w.Write(filedata)
-	return
-}
 
 type PageHandler struct {
 	staticPath string
@@ -37,25 +24,49 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If we don't have a file path, we default to /index.html - the FileServer would do this too, but because we check
+	// if the file exists below, it means that actualy setting the path to a *real* file makes the code below easier.
+	if path == "/" {
+		path = "/index.html";
+	}
+
 	// prepend the path with the path to the static directory
 	path = filepath.Join(h.staticPath, path)
-
+	
 	// check whether a file exists at the given path
-	_, err = os.Stat(path)
-	if os.IsNotExist(err) {
-		NotFoundHandler(w, r)
-		return
+	var fileInfo os.FileInfo
+	fileInfo, err = os.Stat(path)
+	if os.IsNotExist(err) || fileInfo.IsDir() {
+		// If we can't find the file, then we serve the 404 page, which is also a template.
+		w.WriteHeader(404);
+		fileInfo, _ = os.Stat(filepath.Join(h.staticPath, "404.html"))
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// otherwise, use http.FileServer to serve the static dir
-	http.FileServer(http.Dir(h.staticPath)).ServeHTTP(w, r)
+	filename := fileInfo.Name()
+	log.Printf("Filename: %s - %s\n", fileInfo.Name(), filename)
+	if filepath.Ext(filename) == ".html" {
+		var parsedFile *template.Template
+		globPath := filepath.Join(h.staticPath, "*.html")
+		parsedFile, err := template.ParseGlob(globPath);
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = parsedFile.ExecuteTemplate(w, filename[:len(filename) - 5] ,nil) // -5 == len(".html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	 } else {
+		// otherwise, use http.FileServer to serve the static content like CSS/JS stuff
+		http.FileServer(http.Dir(h.staticPath)).ServeHTTP(w, r)
+	}
 }
 
 
-var g_outputDir string
 func main() {
 	// parameters
 	var contentDir = flag.String("contentdir", "html", "Directory with static content to host.")
