@@ -20,7 +20,7 @@
 #mainmap {
    z-index: 1;
    border: 1px solid var(--main-text-color);
-   border-radius: 0.15em;
+   border-radius: var(--second-border-radius);
 }
 
 /* General content */
@@ -55,7 +55,7 @@ table {
 tr.headsep > td {
    background-color: var(--second-bg-color);
    color: var(--second-text-color);
-   border-radius: 5.4em;
+   border-radius: var(--first-border-radius);
    padding: 0.5em;
 }
 
@@ -79,7 +79,7 @@ td.right {
    color: var(--third-text-color);
    padding-left: 0.4em;
    padding-right: 0.4em;
-   border-radius: 0.4em;
+   border-radius: var(--second-border-radius);
 }
 
 /* Top bar stuff */
@@ -90,6 +90,8 @@ td.right {
    position: sticky;
    top: 0;
    background-color: var(--first-bg-color);
+   border-bottom-left-radius: var(--first-border-radius);
+   border-bottom-right-radius: var(--first-border-radius);
    z-index: 2;
 }
 
@@ -102,6 +104,7 @@ td.right {
    text-align: right;
 }
 
+/* Menu stuff below here. See https://codepen.io/erikterwan/pen/EVzeRP for inspiration */
 #menuToggle {
    display: block;
    position: absolute;
@@ -180,4 +183,13 @@ td.right {
    transform: translate(00px, -9px) rotate(-45deg);
 }
 
-/* Menu stuff below here. See https://codepen.io/erikterwan/pen/EVzeRP */
+/* FOOTER */
+#footer > p {
+   background-color: var(--first-bg-color);
+   color: var(--first-text-color);
+   border-top-left-radius: var(--first-border-radius);
+   border-top-right-radius: var(--first-border-radius);
+
+   padding: 0.5em;
+   text-align: center;
+}

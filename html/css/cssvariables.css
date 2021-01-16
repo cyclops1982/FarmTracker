@@ -13,4 +13,6 @@
    --third-highlight-color: #333; /* Swap these? */
 
    --topbar-height: 45px;
+   --first-border-radius: 1em;
+   --second-border-radius: 0.2em;
 }
