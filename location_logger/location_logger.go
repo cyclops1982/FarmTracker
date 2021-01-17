@@ -125,16 +125,14 @@ func main() {
 		if nBytes != 2 {
 			log.Fatal("We really expect 2 bytes for a messagelength.")
 		}
-		msgData := make([]byte, msgLengthUint16)
-		nBytes, err = con.Read(msgData)
+		msgData := make([]byte, int(msgLengthUint16))
+		
+		nBytes, err = con2.readn(msgData)
 		if err != nil {
 			log.Println("Failed to read:", err)
 			continue
 		}
-		if (nBytes != int(msgLengthUint16)) {
-			log.Fatal("Really expected the correct amount of bytes...")
-		}
-
+		
 		// Convert received stuff to JSON.
 		//TODO: make this something more strongly typed - need to check what happens if our struct is not 100% aligned.
 		var jsonData interface{}
