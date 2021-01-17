@@ -10,6 +10,7 @@ import (
 	"flag"
 	"path/filepath"
 	"html/template"
+	"encoding/json"
 )
 
 type PageHandler struct {
@@ -67,6 +68,12 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func HandleJSONRequest(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	json.NewEncoder(w).Encode(map[string]bool{vars["what"]: true})
+}
+
 
 func main() {
 	// parameters
@@ -76,7 +83,7 @@ func main() {
 	flag.Parse()
 
 	router := mux.NewRouter()
-	
+	router.HandleFunc("/api/json/{what}.json", HandleJSONRequest);
 	router.PathPrefix("/").Handler(PageHandler{staticPath: *contentDir})
 
 	log.Printf("Starting HTTP server on %s:%d\n", *ipAddress, *httpPort)
