@@ -11,4 +11,13 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# Dump files / logs
 dumps/
+
+# binary output
+dir_processor/dir_processor
+http_frontend/http_frontend
+http_receiver/http_receiver
+location_logger/location_logger
+base64parser/base64parser
+sqltest/sqltest
