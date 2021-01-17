@@ -107,7 +107,7 @@ func main() {
 	CheckConnection(ctx, pool)
 
 	// Prepare the insert statement
-	sqlInsert, err := pool.Prepare("INSERT INTO Location(DeviceId, Location) VALUES((SELECT Id FROM Device WHERE DeviceEUI = ?), ST_GeomFromText(?))")
+	sqlInsert, err := pool.Prepare("INSERT INTO Location(LoggedOn, DeviceId, Location) VALUES(?, (SELECT Id FROM Device WHERE DeviceEUI = ?), ST_GeomFromText(?))")
 	defer sqlInsert.Close()
 	if err != nil {
 		log.Fatalf("Failed to prepare INSERT statement: %v\n", err)
@@ -170,11 +170,15 @@ func main() {
 			log.Printf("Couldn't unpack binary array from base64 data ('%s') into Lora Msg Struct. Skipping.\n", base64data)
 			continue
 		}
-		log.Printf("Unixtime: %d\nVoltage: %d\nLat/Long: %d/%d\n", loraMsg.Unixtime, loraMsg.RawVoltage, loraMsg.Latitude, loraMsg.Longitude)
-		_, err = sqlInsert.Exec(devEUI, fmt.Sprintf("POINT(%d %d)", loraMsg.Latitude, loraMsg.Longitude))
+		msgTime := time.Unix(int64(loraMsg.Unixtime), 0)
+		log.Printf("Unixtime: %d - %s\nVoltage: %d\nLat/Long: %d/%d\n", loraMsg.Unixtime, msgTime, loraMsg.RawVoltage, loraMsg.Latitude, loraMsg.Longitude)
+		_, err = sqlInsert.Exec(msgTime, devEUI, fmt.Sprintf("POINT(%f %f)", float32(loraMsg.Latitude)/10000000, float32(loraMsg.Longitude)/10000000))
 		if err != nil {
 			log.Printf("FAILED to insert location into DB: %v\n",err)
 			continue
 		}
+
+		// Tell the server that we're ready for the next message.
+		//con.Write([]byte("."))
 	}
 }
