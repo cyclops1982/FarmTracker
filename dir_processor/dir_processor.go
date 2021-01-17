@@ -129,7 +129,7 @@ func HandleClient(con net.Conn) {
 			log.Println("Failed to write bytes. Disconnecting. Error was: ", err)
 			return
 		} else {
-			log.Printf("Wrote %d bytes to %s.\n", writenbytes, con.RemoteAddr())
+			log.Printf("Wrote %d bytes to %s - %s.\n", writenbytes, con.RemoteAddr(), file)
 		}
 	}
 }

@@ -32,16 +32,22 @@ The following tools/apps exist:
 -  Start the dir_processor.
 
 ## TODO's
-- Make the website a PWA by adding a manifest file
-- Add 'magic bytes' to the data communication between dir_processor and it's clients.
-- Enhance the location_logger to log out the last unixtime that it received. 
-- Enhance the location_logger to be more failsafe on what it reads
-- Add dir_processor client to write the received JSON to a DB, so that we can query that.
-- Add dir_processor client that writes to duckDB for time series info
-- Add graph of time-series data to web app
+
+-  Make the website a PWA by adding a manifest file
+-  Add 'magic bytes' to the data communication between dir_processor and it's clients.
+-  Enhance the location_logger to log out the last unixtime that it received.
+-  Enhance the location_logger to be more failsafe on what it reads
+-  Add dir_processor client to write the received JSON to a DB, so that we can query that.
+-  Add dir_processor client that writes to duckDB for time series info
+-  Add graph of time-series data to web app
+
+### Query notes
+
+-  MSG per day:
+   SELECT COUNT(LoggedOn), DATE_FORMAT(LoggedOn, "%Y-%m-%d") AS YMD from Location GROUP BY YMD;
 
 ## Other notes
 
-- Great way to demonstrate leaflet layers: https://leaflet-extras.github.io/leaflet-providers/preview/
-- Nice table implementation: https://codepen.io/geoffyuen/pen/FCBEg
-- jQuery is not needed in most cases: http://youmightnotneedjquery.com/ - let's try to keep it lightweight.
+-  Great way to demonstrate leaflet layers: https://leaflet-extras.github.io/leaflet-providers/preview/
+-  Nice table implementation: https://codepen.io/geoffyuen/pen/FCBEg
+-  jQuery is not needed in most cases: http://youmightnotneedjquery.com/ - let's try to keep it lightweight.
