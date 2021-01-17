@@ -37,6 +37,7 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// check whether a file exists at the given path
 	var fileInfo os.FileInfo
 	fileInfo, err = os.Stat(path)
+	
 	if os.IsNotExist(err) || fileInfo.IsDir() {
 		// If we can't find the file, then we serve the 404 page, which is also a template.
 		w.WriteHeader(http.StatusNotFound);
