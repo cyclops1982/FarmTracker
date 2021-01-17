@@ -45,6 +45,43 @@ func CheckConnection(ctx context.Context, pool *sql.DB) {
 	}
 }
 
+type FarmTCPConn struct {
+	net.Conn
+}
+
+func (con *FarmTCPConn) readn(allBytes []byte) (int, error) {
+	allReadBytes:=0
+
+	for {
+		readBytes, err := con.Read(allBytes[allReadBytes:])
+		allReadBytes += readBytes
+		if err != nil {
+			return readBytes, err
+		}
+		if allReadBytes == len(allBytes) {
+			break
+		}
+	}
+	return allReadBytes, nil
+}
+
+func readnbytes(con net.Conn, nbytes int) ([]byte, error) {
+	allBytes := make([]byte, nbytes)
+	allReadBytes :=0
+
+	for {
+		readBytes, err := con.Read(allBytes[allReadBytes:])
+		allReadBytes += readBytes
+		if err != nil {
+			return nil, err
+		}
+		if allReadBytes == nbytes {
+			break
+		}
+	}
+	return allBytes, nil
+}
+
 func main() {
 	var err error
 	var ipAddress = flag.String("server", "127.0.0.1", "The IP address (or hostname) of the server to connect to.")
@@ -59,6 +96,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to %s. Exiting.", addr)
 	}
+
+	con2 := FarmTCPConn{con}
 
 	// Create SQL connection & context
 	pool := CreateConnection(sqlConString)
