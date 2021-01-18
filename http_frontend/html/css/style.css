@@ -195,3 +195,43 @@ td.right {
    padding: 0.5em;
    text-align: center;
 }
+
+/* Markers */
+div.marker-main {
+   height: 30px;
+   width: 35px;
+   background-size: contain;
+   background-repeat: no-repeat;
+}
+
+div.marker-main > div.marker-bar-outer {
+   border: 1px solid black;
+   width: 5px;
+   height: 100%;
+   display: block;
+   float: right;
+   position: relative;
+}
+
+.sheep {
+   background-image: url("/imgs/ewe-twitter.png");
+}
+.level-high {
+   background-color: green;
+}
+.level-medium {
+   background-color: yellow;
+}
+.level-low {
+   background-color: red;
+}
+
+.water {
+   background-image: url("/imgs/drop.png");
+}
+
+div.marker-bar-level {
+   position: absolute;
+   width: 100%;
+   bottom: 0;
+}
