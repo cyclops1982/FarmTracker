@@ -51,3 +51,4 @@ The following tools/apps exist:
 -  Great way to demonstrate leaflet layers: https://leaflet-extras.github.io/leaflet-providers/preview/
 -  Nice table implementation: https://codepen.io/geoffyuen/pen/FCBEg
 -  jQuery is not needed in most cases: http://youmightnotneedjquery.com/ - let's try to keep it lightweight.
+-  Emojis https://github.com/twitter/twemoji (we could use these as images on the map?)

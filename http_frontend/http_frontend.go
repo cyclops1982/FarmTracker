@@ -39,7 +39,7 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fileInfo, err = os.Stat(path)
 	
 	if os.IsNotExist(err) || fileInfo.IsDir() {
-		// If we can't find the file, then we serve the 404 page, which is also a template.
+		// If we can't find the file, then we serve the 404 page, which is also template based.
 		w.WriteHeader(http.StatusNotFound);
 		fileInfo, _ = os.Stat(filepath.Join(h.staticPath, "404.html"))
 	} else if err != nil {
@@ -47,6 +47,7 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// if the file we need to serve ends on .html, then it must be a template and we parse that below.
 	filename := fileInfo.Name()
 	if filepath.Ext(filename) == ".html" {
 		var parsedFile *template.Template
