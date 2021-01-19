@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/cyclops1982/farmtracker/messagestructs"
+	"github.com/cyclops1982/farmtracker/enhancedconn"
 	"bytes"
 	"time"
 	"context"
@@ -45,43 +46,6 @@ func CheckConnection(ctx context.Context, pool *sql.DB) {
 	}
 }
 
-type FarmTCPConn struct {
-	net.Conn
-}
-
-func (con *FarmTCPConn) readn(allBytes []byte) (int, error) {
-	allReadBytes:=0
-
-	for {
-		readBytes, err := con.Read(allBytes[allReadBytes:])
-		allReadBytes += readBytes
-		if err != nil {
-			return readBytes, err
-		}
-		if allReadBytes == len(allBytes) {
-			break
-		}
-	}
-	return allReadBytes, nil
-}
-
-func readnbytes(con net.Conn, nbytes int) ([]byte, error) {
-	allBytes := make([]byte, nbytes)
-	allReadBytes :=0
-
-	for {
-		readBytes, err := con.Read(allBytes[allReadBytes:])
-		allReadBytes += readBytes
-		if err != nil {
-			return nil, err
-		}
-		if allReadBytes == nbytes {
-			break
-		}
-	}
-	return allBytes, nil
-}
-
 func main() {
 	var err error
 	var ipAddress = flag.String("server", "127.0.0.1", "The IP address (or hostname) of the server to connect to.")
@@ -92,12 +56,13 @@ func main() {
 	flag.Parse()
 
 	addr := fmt.Sprintf("%s:%d", *ipAddress, *tcpPort)
-	con, err := net.Dial("tcp", addr)
+	
+	tmpcon, err := net.Dial("tcp", addr)
 	if err != nil {
 		log.Fatalf("Failed to connect to %s. Exiting.", addr)
 	}
+	con := enhancedconn.EnhancedConn{tmpcon}
 
-	con2 := FarmTCPConn{con}
 
 	// Create SQL connection & context
 	pool := CreateConnection(sqlConString)
@@ -127,7 +92,7 @@ func main() {
 		}
 		msgData := make([]byte, int(msgLengthUint16))
 		
-		nBytes, err = con2.readn(msgData)
+		nBytes, err = con.ReadBytes(msgData)
 		if err != nil {
 			log.Println("Failed to read:", err)
 			continue
@@ -175,8 +140,5 @@ func main() {
 			log.Printf("FAILED to insert location into DB: %v\n",err)
 			continue
 		}
-
-		// Tell the server that we're ready for the next message.
-		//con.Write([]byte("."))
 	}
 }
