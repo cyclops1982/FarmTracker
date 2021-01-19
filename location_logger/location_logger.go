@@ -50,8 +50,8 @@ func AddRecords(pool *sql.DB, deveui string, loraMsg *loramsgs.SodaqUniversalTra
 	var err error
 	sqlInsertLocation, _ := pool.Prepare("INSERT INTO Location(LoggedOn, DeviceId, Location) VALUES(?, ?, ST_GeomFromText(?))")
 	sqlInsertBattery, _ := pool.Prepare("INSERT INTO BatteryStatus(LoggedOn, DeviceId, RawValue) VALUES(?, ?, ?)")
-	//defer sqlInsertLocation.Close()
-	//defer sqlInsertBattery.Close()
+	defer sqlInsertLocation.Close()
+	defer sqlInsertBattery.Close()
 
 	var deviceId int
 	err = pool.QueryRow("SELECT Id FROM Device WHERE DeviceEUI=?", deveui).Scan(&deviceId)
@@ -96,36 +96,33 @@ func main() {
 	pool := CreateConnection(sqlConString)
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
-
 	CheckConnection(ctx, pool)
 
-	// Prepare the insert statement
-	sqlInsert, err := pool.Prepare("INSERT INTO Location(LoggedOn, DeviceId, Location) VALUES(?, (SELECT Id FROM Device WHERE DeviceEUI = ?), ST_GeomFromText(?))")
-	defer sqlInsert.Close()
-	if err != nil {
-		log.Fatalf("Failed to prepare INSERT statement: %v\n", err)
-	}
-
+	// tell the server what we want to receive.
 	unixtimebytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(unixtimebytes, uint64(*fromUnixtime))
 	con.Write(unixtimebytes)
 	con.Write([]byte("up."))
-	msgLength := make([]byte, 2)
+
+	
 	for {
-		nBytes, err := con.Read(msgLength)
-		msgLengthUint16 := binary.BigEndian.Uint16(msgLength)
-		log.Printf("Length of message that's coming: %d\n", msgLengthUint16)
+		// Read how long our message will be.
+		msgLength := make([]byte, 2)
+		nBytes, err := con.ReadBytes(msgLength)
 		if nBytes != 2 {
 			log.Fatal("We really expect 2 bytes for a messagelength.")
 		}
-		msgData := make([]byte, int(msgLengthUint16))
-		
+
+		// Create the buffer of the correct size and read that amount of bytes.
+		dataLength := int(binary.BigEndian.Uint16(msgLength))
+		msgData := make([]byte, dataLength)
 		nBytes, err = con.ReadBytes(msgData)
 		if err != nil {
 			log.Println("Failed to read:", err)
 			continue
 		}
-		
+
+		log.Printf("Received message of %d bytes. Processing.\n", dataLength)
 		// Convert received stuff to JSON.
 		//TODO: make this something more strongly typed - need to check what happens if our struct is not 100% aligned.
 		var jsonData interface{}
@@ -141,7 +138,6 @@ func main() {
 			log.Println("Failed to convert data to string. Skipping.")
 			continue
 		}
-		log.Println("DEVEUI: ",devEUI)
 		base64data, ok := realData["data"].(string)
 		if ok == false {
 			log.Println("Failed to convert data to string. Skipping.")
@@ -161,8 +157,7 @@ func main() {
 			log.Printf("Couldn't unpack binary array from base64 data ('%s') into Lora Msg Struct. Skipping.\n", base64data)
 			continue
 		}
-
-		log.Println("Battery Status: ", loraMsg.RawVoltage)
+		log.Printf("Adding LoraMSG from %d (unixtime) to db\n", loraMsg.Unixtime)
 		go AddRecords(pool, devEUI, &loraMsg)
 
 	}
