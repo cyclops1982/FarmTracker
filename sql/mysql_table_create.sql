@@ -22,13 +22,13 @@ CREATE TABLE Location (
 );
 
 CREATE TABLE BatteryStatus (
-	Id BININT NOT NULL AUTO_INCREMENT,
+	Id BIGINT NOT NULL AUTO_INCREMENT,
 	DeviceId INT NOT NULL,
 	LoggedOn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	RawValue INT NOT NULL,
 	BatteryLevel TINYINT NULL,
 	CONSTRAINT PK_BatteryStatus PRIMARY KEY (Id),
 	CONSTRAINT UX_BatteryStatus_LoggedOnDeviceId UNIQUE KEY (LoggedOn, DeviceId), /* A device can't reports it's battery value multiple times at the same time */
-	CONSTRAINT FK_BatteryStatus_Device FOREIGN KEY (DeviceId) REFERENCES (Device(Id ON DELETE NO ACTION ON UPDATE CASCADE,
+	CONSTRAINT FK_BatteryStatus_Device FOREIGN KEY (DeviceId) REFERENCES Device(Id) ON DELETE NO ACTION ON UPDATE CASCADE,
 	INDEX IX_BatteryStatus_LoggedOn (LoggedOn)
 );

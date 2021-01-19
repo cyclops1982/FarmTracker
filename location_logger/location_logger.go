@@ -46,6 +46,34 @@ func CheckConnection(ctx context.Context, pool *sql.DB) {
 	}
 }
 
+func AddRecords(pool *sql.DB, deveui string, loraMsg *loramsgs.SodaqUniversalTracker) {
+	var err error
+	sqlInsertLocation, _ := pool.Prepare("INSERT INTO Location(LoggedOn, DeviceId, Location) VALUES(?, ?, ST_GeomFromText(?))")
+	sqlInsertBattery, _ := pool.Prepare("INSERT INTO BatteryStatus(LoggedOn, DeviceId, RawValue) VALUES(?, ?, ?)")
+	//defer sqlInsertLocation.Close()
+	//defer sqlInsertBattery.Close()
+
+	var deviceId int
+	err = pool.QueryRow("SELECT Id FROM Device WHERE DeviceEUI=?", deveui).Scan(&deviceId)
+	if err != nil {
+		log.Printf("Failed to retrieve Id for Device '%s', error was: %v\n", deveui, err)
+		return
+	}
+
+	long := float32(loraMsg.Longitude)/10000000
+	lat := float32(loraMsg.Latitude)/10000000
+	msgTime := time.Unix(int64(loraMsg.Unixtime), 0)
+
+	_, err = sqlInsertLocation.Exec(msgTime, deviceId, fmt.Sprintf("POINT(%f %f)", lat, long))
+	if err != nil {
+		log.Printf("FAILED to insert location into DB: %v\n",err)
+	}
+	_, err = sqlInsertBattery.Exec(msgTime, deviceId, loraMsg.RawVoltage)
+	if err != nil {
+		log.Printf("FAILED to insert batterystatus into DB: %v\n",err)
+	}
+}
+
 func main() {
 	var err error
 	var ipAddress = flag.String("server", "127.0.0.1", "The IP address (or hostname) of the server to connect to.")
@@ -133,12 +161,9 @@ func main() {
 			log.Printf("Couldn't unpack binary array from base64 data ('%s') into Lora Msg Struct. Skipping.\n", base64data)
 			continue
 		}
-		msgTime := time.Unix(int64(loraMsg.Unixtime), 0)
-		log.Printf("Unixtime: %d - %s\nVoltage: %d\nLat/Long: %d/%d\n", loraMsg.Unixtime, msgTime, loraMsg.RawVoltage, loraMsg.Latitude, loraMsg.Longitude)
-		_, err = sqlInsert.Exec(msgTime, devEUI, fmt.Sprintf("POINT(%f %f)", float32(loraMsg.Latitude)/10000000, float32(loraMsg.Longitude)/10000000))
-		if err != nil {
-			log.Printf("FAILED to insert location into DB: %v\n",err)
-			continue
-		}
+
+		log.Println("Battery Status: ", loraMsg.RawVoltage)
+		go AddRecords(pool, devEUI, &loraMsg)
+
 	}
 }
