@@ -1,6 +1,64 @@
 document.addEventListener("DOMContentLoaded", function (event) {
-   var mainmap = LoadMap("mainmap");
+   if (window.location.href.endsWith("graph.html")) {
+      LoadGraph();
+   } else {
+      LoadMap("mainmap");
+   }
 });
+
+function LoadGraph() {
+   d3.json("/api/json/bla.json").then(function (data) {
+      var margin = { top: 20, right: 20, bottom: 30, left: 50 };
+      var width = 600 - margin.left - margin.right;
+      var height = 400 - margin.top - margin.bottom;
+
+      console.log(data);
+      var x = d3.scaleTime().range([0, width]);
+      var y = d3.scaleLinear().range([height, 0]);
+
+      data.forEach(function (d) {
+         d.DateTime = Date.parse(d.Date);
+      });
+      data.sort((a, b) => {
+         return a.DateTime - b.DateTime;
+      });
+
+      var line = d3
+         .line()
+         .x(function (d) {
+            return x(d.DateTime);
+         })
+         .y(function (d) {
+            return y(d.Voltage);
+         });
+
+      var svg = d3
+         .select("#graph")
+         .append("svg")
+         .attr("width", width + margin.left + margin.right)
+         .attr("height", height + margin.top + margin.bottom)
+         .append("g")
+         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      x.domain(
+         d3.extent(data, function (d) {
+            return d.DateTime;
+         })
+      );
+      y.domain([3, 4.5]);
+
+      svg.append("path")
+         .data([data])
+         .attr("fill", "none")
+         .attr("stroke", "steelblue")
+         .attr("stroke-width", "2px")
+         .attr("d", line);
+      svg.append("g")
+         .attr("transform", "translate(0," + height + ")")
+         .call(d3.axisBottom(x));
+      svg.append("g").call(d3.axisLeft(y));
+   });
+}
 
 function LoadMap(mapId) {
    // Load data from JSON
