@@ -11,6 +11,10 @@ import (
 	"path/filepath"
 	"html/template"
 	"encoding/json"
+	"context"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
+
 )
 
 type PageHandler struct {
@@ -70,18 +74,81 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func HandleJSONRequest(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
 
-	json.NewEncoder(w).Encode(map[string]bool{vars["what"]: true})
+type BatReading struct {
+	Date time.Time
+	Voltage float32
 }
 
+
+func CreateConnection(dsn *string) *sql.DB {
+	var pool *sql.DB
+	var err error
+	// Setup SQL connection
+	pool, err = sql.Open("mysql", *dsn)
+	if err != nil {
+		log.Fatalf("Failed to connect to SQL: %v\n", err)
+	}
+	pool.SetConnMaxLifetime(time.Minute * 3)
+	pool.SetMaxOpenConns(10)
+	pool.SetMaxIdleConns(10)
+
+	return pool
+}
+
+func CheckConnection(ctx context.Context, pool *sql.DB) {
+	ctx, cancel := context.WithTimeout(ctx, 1 * time.Second)
+	defer cancel()
+
+	if err := pool.PingContext(ctx); err != nil {
+		log.Fatalf("PingContext() failed - Unable to connect to database: %v\n", err)
+	}
+
+	if err := pool.Ping(); err != nil {
+		log.Fatalf("Ping() failed - unable to connect to databsae: %v\n", err)
+	}
+}
+
+func HandleJSONRequest(w http.ResponseWriter, r *http.Request) {
+	//vars := mux.Vars(r)
+	pool := CreateConnection(&sqlConString)
+
+	var stuff []BatReading
+
+	rows, err := pool.Query("SELECT LoggedOn, (((RawValue*10) + 3000)/1000 ) AS RealVolt FROM BatteryStatus ORDER BY LoggedOn")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError);
+		log.Fatal(err);
+
+		return;
+	}
+	defer rows.Close()
+	for rows.Next() {
+	var LoggedOn time.Time
+	var Voltage float32
+	err := rows.Scan(&LoggedOn, &Voltage);
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError);
+		log.Fatal(err);
+		return;
+	}
+	stuff = append(stuff, BatReading{LoggedOn, Voltage})
+}
+
+	w.Header().Set("Content-Type", "application/json")
+	
+	json.NewEncoder(w).Encode(stuff)
+}
+
+
+var sqlConString string
 
 func main() {
 	// parameters
 	var contentDir = flag.String("contentdir", "html", "Directory with static content to host.")
 	var httpPort = flag.Int("port", 9191, "The port to bind on for the HTTP server.")
 	var ipAddress = flag.String("address", "0.0.0.0", "The IP address to bind on.")
+	flag.StringVar(&sqlConString, "sqlconstring", "farmtracker:MyGreatPassword@tcp(localhost)/FarmTracker?parseTime=true", "The DSN Connection String to use to connect to the MySQL DB.")
 	flag.Parse()
 
 	router := mux.NewRouter()
