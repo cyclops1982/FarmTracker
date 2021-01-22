@@ -12,7 +12,6 @@ function LoadGraph() {
       var width = 600 - margin.left - margin.right;
       var height = 400 - margin.top - margin.bottom;
 
-      console.log(data);
       var x = d3.scaleTime().range([0, width]);
       var y = d3.scaleLinear().range([height, 0]);
 
@@ -22,6 +21,8 @@ function LoadGraph() {
       data.sort((a, b) => {
          return a.DateTime - b.DateTime;
       });
+
+      data = data.filter((x) => x.DateTime > Date.now() - 24 * 60 * 60 * 1000 * 4);
 
       var line = d3
          .line()
@@ -45,7 +46,7 @@ function LoadGraph() {
             return d.DateTime;
          })
       );
-      y.domain([3, 4.5]);
+      y.domain([3.5, 4.5]);
 
       svg.append("path")
          .data([data])
