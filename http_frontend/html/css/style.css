@@ -157,6 +157,8 @@ td.right {
 #menuToggle a {
    text-decoration: none;
    padding-left: 0.5em;
+   width: 100%;
+   display: inline-block;
 }
 
 #menuToggle li:hover {
