@@ -21,6 +21,13 @@ type PageHandler struct {
 	staticPath string
 }
 
+func ErrorHandler(err error, w http.ResponseWriter) {
+	log.Printf("Error occured: %v\n", err)
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(err.Error()))
+}
+
+
 func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// get the absolute path to prevent directory traversal
 	path, err := filepath.Abs(r.URL.Path)
