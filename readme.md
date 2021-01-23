@@ -39,7 +39,6 @@ The following tools/apps exist:
 -  Enhance the location_logger to be more failsafe on what it reads
 -  Add dir_processor client to write the received JSON to a DB, so that we can query that.
 -  Add dir_processor client that writes to duckDB for time series info
--  Add graph of time-series data to web app
 
 ### Query notes
 

@@ -21,9 +21,6 @@ function LoadGraph() {
       data.sort((a, b) => {
          return a.DateTime - b.DateTime;
       });
-
-      data = data.filter((x) => x.DateTime > Date.now() - 24 * 60 * 60 * 1000 * 4);
-
       var line = d3
          .line()
          .x(function (d) {

@@ -37,11 +37,11 @@ func (h PageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// prepend the path with the path to the static directory
 	path = filepath.Join(h.staticPath, path)
-	
+
 	// check whether a file exists at the given path
 	var fileInfo os.FileInfo
 	fileInfo, err = os.Stat(path)
-	
+
 	if os.IsNotExist(err) || fileInfo.IsDir() {
 		// If we can't find the file, then we serve the 404 page, which is also template based.
 		w.WriteHeader(http.StatusNotFound);
@@ -115,28 +115,24 @@ func HandleJSONRequest(w http.ResponseWriter, r *http.Request) {
 
 	var stuff []BatReading
 
-	rows, err := pool.Query("SELECT LoggedOn, (((RawValue*10) + 3000)/1000 ) AS RealVolt FROM BatteryStatus ORDER BY LoggedOn")
+	rows, err := pool.Query("SELECT LoggedOn, (((RawValue*10) + 3000)/1000 ) AS RealVolt FROM BatteryStatus WHERE LoggedOn > ADDDATE(CURRENT_TIMESTAMP(), INTERVAL -4 DAY) ORDER BY LoggedOn")
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError);
-		log.Fatal(err);
-
+		ErrorHandler(err, w);
 		return;
 	}
 	defer rows.Close()
 	for rows.Next() {
-	var LoggedOn time.Time
-	var Voltage float32
-	err := rows.Scan(&LoggedOn, &Voltage);
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError);
-		log.Fatal(err);
-		return;
+		var LoggedOn time.Time
+		var Voltage float32
+		err := rows.Scan(&LoggedOn, &Voltage);
+		if err != nil {
+			ErrorHandler(err, w)
+			return;
+		}
+		stuff = append(stuff, BatReading{LoggedOn, Voltage})
 	}
-	stuff = append(stuff, BatReading{LoggedOn, Voltage})
-}
 
 	w.Header().Set("Content-Type", "application/json")
-	
 	json.NewEncoder(w).Encode(stuff)
 }
 
