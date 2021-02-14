@@ -8,7 +8,7 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
-	"github.com/cyclops1982/farmtracker/messagestructs"
+	"github.com/cyclops1982/farmtracker/loramsgstructs"
 	"github.com/cyclops1982/farmtracker/enhancedconn"
 	"bytes"
 	"time"

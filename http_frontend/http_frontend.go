@@ -122,7 +122,7 @@ func HandleJSONRequest(w http.ResponseWriter, r *http.Request) {
 
 	var stuff []BatReading
 
-	rows, err := pool.Query("SELECT LoggedOn, (((RawValue*10) + 3000)/1000 ) AS RealVolt FROM BatteryStatus WHERE LoggedOn > ADDDATE(CURRENT_TIMESTAMP(), INTERVAL -4 DAY) ORDER BY LoggedOn")
+	rows, err := pool.Query("SELECT LoggedOn, (((RawValue*10) + 3000)/1000 ) AS RealVolt FROM BatteryStatus WHERE LoggedOn > ADDDATE(CURRENT_TIMESTAMP(), INTERVAL -15 DAY) ORDER BY LoggedOn")
 	if err != nil {
 		ErrorHandler(err, w);
 		return;
