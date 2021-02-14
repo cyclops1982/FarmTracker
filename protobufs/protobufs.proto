@@ -1,0 +1,26 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/cyclops1982/farmtracker/protobufs";
+
+message Location {
+	double longitude = 1;
+	double latitude = 2;
+	uint32 accuracy = 3;
+}
+
+message DeviceIdentifier {
+	enum DeviceIdentifierType {
+		DevEUI = 0;
+		IMEI = 1;
+	}
+	string identifier = 1;
+	DeviceIdentifierType type = 2;
+}
+
+message DeviceUpdate {
+	DeviceIdentifier deviceIdentifier = 1;
+	google.protobuf.Timestamp updated = 2;
+	Location GPSCoordinates = 3;
+	float BatteryVoltage = 4;
+}
