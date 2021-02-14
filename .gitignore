@@ -20,4 +20,6 @@ http_frontend/http_frontend
 http_receiver/http_receiver
 location_logger/location_logger
 base64parser/base64parser
-sqltest/sqltest
+
+# ignore protobuffers
+protobufs/*.pb.go
