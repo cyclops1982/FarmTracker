@@ -52,6 +52,7 @@ func HandleClient(con net.Conn) {
 
 	var err error
 
+	//TODO: Move this timestamp and what the client wants to receive into a protobuf. That will allow us to enhance this protocol later. We simply don't know what we'll do later.
 	// We're reading a few bytes to get some data that we need.
 	// That would first be a uint64 (for a unixtime)
 	tmpUTime := make([]byte, 8)
