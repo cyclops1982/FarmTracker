@@ -24,3 +24,18 @@ message DeviceUpdate {
 	Location GPSCoordinates = 3;
 	float BatteryVoltage = 4;
 }
+
+
+
+message MessagesRequest {
+	enum WhatData {
+		All = 0;
+		LoraUpdatesV1 = 2;
+		LoraUpdatesV2 = 3;
+		LoraStatusV1 = 4;
+	}
+	
+	google.protobuf.Timestamp dataSince = 1;
+	WhatData dataToGet = 2;
+
+}

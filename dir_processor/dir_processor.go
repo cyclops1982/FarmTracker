@@ -13,6 +13,9 @@ import (
 	"io/ioutil"
 	"bytes"
 	"strings"
+	"github.com/cyclops1982/farmtracker/enhancedconn"
+	"github.com/cyclops1982/farmtracker/protobufs"
+	proto "github.com/golang/protobuf/proto"
 )
 
 func FindFiles(ch chan string, path string, filter string, unixtime time.Time) {
@@ -47,15 +50,40 @@ func FindFiles(ch chan string, path string, filter string, unixtime time.Time) {
 }
 
 
-func HandleClient(con net.Conn) {
-	defer con.Close()
 
+func HandleClient(con enhancedconn.EnhancedConn) {
+	defer con.Close()
+	var msgLength uint16
 	var err error
 
-	//TODO: Move this timestamp and what the client wants to receive into a protobuf. That will allow us to enhance this protocol later. We simply don't know what we'll do later.
-	// We're reading a few bytes to get some data that we need.
-	// That would first be a uint64 (for a unixtime)
+	msgLength = con.ReadLength();
+	if msgLength == 0 {
+		log.Printf("Client '%s' did not send correct length. Dropping.", con.RemoteAddr())
+		return; 
+	}
+
+	initialdata := make([]byte, msgLength)
+	_, err = con.ReadBytes(initialdata)
+	if err != nil {
+		log.Printf("Client '%s' didn't send expected amount of data. Dropping.", con.RemoteAddr());
+		return; 
+	}
+
+	msgReq := &protobufs.MessagesRequest{}
+
+	err = proto.Unmarshal(initialdata, msgReq);
+	if err != nil {
+		log.Printf("Client '%s' didn't send expected protobuf message. Dropping.", con.RemoteAddr())
+		return;
+	}
+
+	log.Println(msgReq)
+	log.Println(msgReq.DataSince.AsTime())
+
+	return;
+	
 	tmpUTime := make([]byte, 8)
+	
 	_, err = con.Read(tmpUTime)
 	if err != nil {
 		log.Printf("Expected 8 bytes (uint64) from %s. Got an error: %v. Disconnecting.\n", con.RemoteAddr(), err)
@@ -158,7 +186,7 @@ func main() {
 			continue;
 		}
 		log.Println("Client ",con.RemoteAddr()," connected. Starting Thread.")
-		go HandleClient(con)
+		go HandleClient(enhancedconn.EnhancedConn{con})
 	}
 
 }
