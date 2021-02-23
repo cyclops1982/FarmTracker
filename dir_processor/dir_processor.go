@@ -1,18 +1,18 @@
 package main
 
 import (
-	"log"
-	"flag"
-	"path/filepath"
-	"os"
-	"time"
-	"net"
-	"fmt"
-	"encoding/json"
 	"encoding/binary"
+	"encoding/json"
+	"flag"
+	"fmt"
 	"io/ioutil"
-	"bytes"
+	"log"
+	"net"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
+
 	"github.com/cyclops1982/farmtracker/enhancedconn"
 	"github.com/cyclops1982/farmtracker/protobufs"
 	proto "github.com/golang/protobuf/proto"
@@ -80,43 +80,18 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 	log.Println(msgReq)
 	log.Println(msgReq.DataSince.AsTime())
 
-	return;
+
 	
-	tmpUTime := make([]byte, 8)
-	
-	_, err = con.Read(tmpUTime)
-	if err != nil {
-		log.Printf("Expected 8 bytes (uint64) from %s. Got an error: %v. Disconnecting.\n", con.RemoteAddr(), err)
-		return
-	}
-	timeInt64 := int64(binary.LittleEndian.Uint64(tmpUTime))
-	unixTime := time.Unix(timeInt64, 0)
-	log.Printf("The time: %v - %v\n", timeInt64, unixTime)
-
-	tmp := make([]byte, 30)
-	_, err = con.Read(tmp)
-	if err != nil {
-		log.Println("Failed to read from client",con.RemoteAddr(),". Disconnecting. Error: ", err)
-		return
-	}
-	// check if we have a dot, as that indicates the end of our command.
-	if bytes.ContainsRune(tmp, '.') == false {
-		con.Write([]byte("Sorry, i didn't get that. Bye."))
-		return
-	}
-
-	// Remove all chars, so we compare to a nice string.
-	replacer := strings.NewReplacer("\r", "", "\n", "", ".", "", "\x00", "")
-	filterinput := replacer.Replace(string(tmp[:]))
-
 	var filter string
-	switch filterinput {
-		case "up":
-			filter = "_up_"
-		case "status":
+	switch msgReq.DataToGet {
+		case protobufs.MessagesRequest_LoraStatusV1:
 			filter = "_status_"
-		case "join":
+		case protobufs.MessagesRequest_LoraUpdatesV1:
+			filter = "_up_"
+		case protobufs.MessagesRequest_LoraJoinV1:
 			filter = "_join_"
+		case protobufs.MessagesRequest_All:
+			filter = ""
 		default:
 			filter = ""
 	}
@@ -126,7 +101,7 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 
 	// Now let's find some files in a seperate thread.
 	ch := make(chan string)
-	go FindFiles(ch, inputdir, filter, unixTime)
+	go FindFiles(ch, inputdir, filter, msgReq.DataSince.AsTime())
 
 	// Read from the channel and send out the content.
 	for file := range ch {
@@ -142,6 +117,8 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 			log.Printf("Failed to parse JSON. Ignoring file '%s'. Error: %s\n", file, err)
 			continue
 		}
+
+		//TODO create protobuf message and send it.
 		/* 
 		Example of filtering:
 		realData := jsonData.(map[string]interface{})

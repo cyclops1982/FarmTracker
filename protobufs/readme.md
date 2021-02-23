@@ -2,7 +2,9 @@
 
 This folder contains protobuf definitions used in the FarmTracker project.
 
-Compile the protobuf with `protoc --go_out=. --go_opt=module=github.com/cyclops1982/farmtracker/protobufs protobufs.proto`. This will make the file in the same directory.
+Compile the protobuf with ```
+protoc --go_out=. --go_opt=module=github.com/cyclops1982/farmtracker/protobufs protobufs.proto
+```. This will make the file in the same directory.
 
 ## Protoc & protoc-gen-go
 
@@ -20,3 +22,4 @@ Then, to install protoc-gen-go:
 ```
 go install google.golang.org/protobuf/cmd/protoc-gen-go
 ```
+and add it to the PATH
