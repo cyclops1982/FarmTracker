@@ -23,6 +23,7 @@ message DeviceUpdate {
 	google.protobuf.Timestamp updated = 2;
 	Location GPSCoordinates = 3;
 	float BatteryVoltage = 4;
+	uint32 RawVoltage = 5; // temp. Will be deleted.
 }
 
 

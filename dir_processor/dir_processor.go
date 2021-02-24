@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/binary"
 	"encoding/json"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +17,9 @@ import (
 
 	"github.com/cyclops1982/farmtracker/enhancedconn"
 	"github.com/cyclops1982/farmtracker/protobufs"
+	"github.com/cyclops1982/farmtracker/loramsgstructs"
 	proto "github.com/golang/protobuf/proto"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func FindFiles(ch chan string, path string, filter string, unixtime time.Time) {
@@ -77,11 +81,6 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 		return;
 	}
 
-	log.Println(msgReq)
-	log.Println(msgReq.DataSince.AsTime())
-
-
-	
 	var filter string
 	switch msgReq.DataToGet {
 		case protobufs.MessagesRequest_LoraStatusV1:
@@ -95,9 +94,8 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 		default:
 			filter = ""
 	}
-	if filter != "" {
-		log.Println("Filtering returned items on ", filter)
-	}
+
+	log.Printf("New client '%s' requesting items with filter '%s' from %v\n", con.RemoteAddr(), filter, msgReq.DataSince.AsTime())
 
 	// Now let's find some files in a seperate thread.
 	ch := make(chan string)
@@ -105,38 +103,65 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 
 	// Read from the channel and send out the content.
 	for file := range ch {
-		bytes, err := ioutil.ReadFile(file)
+
+		//TODO: This needs some pattern to handle different file types based on their name.
+		//Currently we only support the JSON format we receive from Chirpstack and assume it's the update message. (filter="_up_")
+
+		filebytes, err := ioutil.ReadFile(file)
 		if err != nil {
-			log.Println("Failed to read ", file, ". Error:", err)
+			log.Printf("File '%s': Read error: %s\n", file, err)
 			continue
 		}
 		// Verify that it's valid JSON.
 		var jsonData interface{}
-		err = json.Unmarshal(bytes, &jsonData)
+		err = json.Unmarshal(filebytes, &jsonData)
 		if err != nil {
-			log.Printf("Failed to parse JSON. Ignoring file '%s'. Error: %s\n", file, err)
+			log.Printf("File '%s': Failed to parse JSON. Error: %s\n", file, err)
 			continue
 		}
 
-		//TODO create protobuf message and send it.
-		/* 
-		Example of filtering:
+		// get the properties that we'd like to have.
 		realData := jsonData.(map[string]interface{})
-		if realData["applicationID"] != "1" {
-			log.Println("JSON payload is not for application 1. Skipping.")
+		devEUI, ok := realData["devEUI"].(string)
+		if ok == false {
+			log.Printf("File '%s': Failed to get devEUI.\n", file)
 			continue
-		}*/
-		// Send out 2 bytes that tell us how long the message will be
-		length := make([]byte, 2)
-		binary.BigEndian.PutUint16(length, uint16(len(bytes)))
-		_, err = con.Write(length)
-		writenbytes, err := con.Write(bytes)
-		if err != nil {
-			log.Println("Failed to write bytes. Disconnecting. Error was: ", err)
-			return
-		} else {
-			log.Printf("Wrote %d bytes to %s - %s.\n", writenbytes, con.RemoteAddr(), file)
 		}
+
+		base64data, ok := realData["data"].(string)
+		if ok == false {
+			log.Printf("File '%s': Failed to get data.\n", file)
+			continue
+		}
+
+		// convert the base64 string to a []byte
+		bs, err := base64.StdEncoding.DecodeString(base64data)
+		if err != nil {
+			log.Printf("File '%s': Failed to decode base64 string '%s'.\n", file, base64data)
+			continue
+		}
+
+		var loraMsg loramsgs.SodaqUniversalTracker
+		byteReader := bytes.NewReader(bs)
+		err = binary.Read(byteReader, binary.LittleEndian, &loraMsg)
+		if err != nil {
+			log.Printf("File '%s': Failed to unpack binary array from base64 data ('%s') into LoraMSG Structure", file, base64data);
+			continue
+		}
+
+		msg := &protobufs.DeviceUpdate{}
+		msg.DeviceIdentifier = &protobufs.DeviceIdentifier{}
+		msg.DeviceIdentifier.Type = protobufs.DeviceIdentifier_DevEUI
+		msg.DeviceIdentifier.Identifier = devEUI
+		msg.Updated = timestamppb.New(time.Unix(int64(loraMsg.Unixtime), 0))
+		msg.GPSCoordinates = &protobufs.Location{}
+		msg.GPSCoordinates.Longitude = float64(loraMsg.Longitude)/10000000
+		msg.GPSCoordinates.Latitude = float64(loraMsg.Latitude)/10000000
+		msg.GPSCoordinates.Accuracy = 0;
+		msg.BatteryVoltage = float32(((uint32(loraMsg.RawVoltage)*10) + 3000)/1000 )
+		msg.RawVoltage = uint32(loraMsg.RawVoltage)
+		log.Printf("File '%s': %v", file, msg);
+
 	}
 }
 
