@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
 	"github.com/cyclops1982/farmtracker/enhancedconn"
 	"github.com/cyclops1982/farmtracker/protobufs"
 	"github.com/cyclops1982/farmtracker/loramsgstructs"
@@ -67,7 +66,7 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 	}
 
 	initialdata := make([]byte, msgLength)
-	_, err = con.ReadBytes(initialdata)
+	_, err = con.ReadBytes(initialdata, 5)
 	if err != nil {
 		log.Printf("Client '%s' didn't send expected amount of data. Dropping.", con.RemoteAddr());
 		return; 
@@ -160,7 +159,17 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 		msg.GPSCoordinates.Accuracy = 0;
 		msg.BatteryVoltage = float32(((float32(loraMsg.RawVoltage)*10) + 3000)/1000 )
 		msg.RawVoltage = uint32(loraMsg.RawVoltage)
-		log.Printf("File '%s': %v", file, msg);
+		
+		out, err := proto.Marshal(msg)
+		if err != nil {
+			log.Fatal("wUT", err)
+		}
+	
+		lengthMsg := make([]byte, 2)
+		binary.BigEndian.PutUint16(lengthMsg, uint16(len(out)))
+		con.Write(lengthMsg)
+		con.Write(out)
+	
 
 	}
 }

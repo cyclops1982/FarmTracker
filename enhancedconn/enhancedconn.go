@@ -5,16 +5,20 @@ import (
 	"log"
 	"time"
 	"encoding/binary"
+	"github.com/cyclops1982/farmtracker/protobufs"
+	proto "github.com/golang/protobuf/proto"
 )
 
 type EnhancedConn struct {
 	net.Conn
 }
 
-func (con *EnhancedConn) ReadBytes(allBytes []byte) (int, error) {
+func (con *EnhancedConn) ReadBytes(allBytes []byte, timeout time.Duration) (int, error) {
 	allReadBytes:=0
 
-	con.SetReadDeadline(time.Now().Add(5 * time.Second))
+	if timeout != 0 {
+		con.SetReadDeadline(time.Now().Add(timeout * time.Second))
+	}	
 
 	for {
 		readBytes, err := con.Read(allBytes[allReadBytes:])
@@ -27,13 +31,16 @@ func (con *EnhancedConn) ReadBytes(allBytes []byte) (int, error) {
 			break
 		}
 	}
+	if timeout != 0 {
+		con.SetReadDeadline(time.Time{})
+	}
 	return allReadBytes, nil
 }
 
 
 func (con *EnhancedConn) ReadLength() uint16 {
 	bytes := make([]byte, 2)
-	length, err := con.ReadBytes(bytes)
+	length, err := con.ReadBytes(bytes, 0)
 	if (err != nil) {
 		log.Printf("Failed to read length: %v\n", err);
 		return 0
@@ -44,4 +51,20 @@ func (con *EnhancedConn) ReadLength() uint16 {
 	}
 
 	return binary.BigEndian.Uint16(bytes)
+}
+
+
+func (con *EnhancedConn) SendProtobufMsg(msg *protobufs.DeviceUpdate) {
+
+	out, err := proto.Marshal(msg)
+	if err != nil {
+		log.Printf("Failed to marshal message - not sending - error: %v\n", err)
+		return
+	}
+
+	lengthMsg := make([]byte, 2)
+	binary.BigEndian.PutUint16(lengthMsg, uint16(len(out)))
+	con.Write(lengthMsg)
+	con.Write(out)
+
 }

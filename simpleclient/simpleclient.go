@@ -44,6 +44,26 @@ func main() {
 	con.Write(lengthMsg)
 	con.Write(out)
 	
+	for {
+		length := con.ReadLength();
+		if length == 0 {
+			log.Printf("Server didn't send us a message length.\n")
+			return; 
+		}
+
+		initialdata := make([]byte, length)
+		_, err = con.ReadBytes(initialdata, 5)
+		if err != nil {
+			log.Printf("Didn't receive expected amount of data.", con.RemoteAddr());
+			return; 
+		}
+
+
+		msg := &protobufs.DeviceUpdate{}
+		err = proto.Unmarshal(initialdata, msg)
+		log.Printf("Message: %v\n", msg)
+
+	}
 
 	return;
 
