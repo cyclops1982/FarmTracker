@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 	"encoding/binary"
-	"github.com/cyclops1982/farmtracker/protobufs"
 	proto "github.com/golang/protobuf/proto"
 )
 
@@ -54,17 +53,15 @@ func (con *EnhancedConn) ReadLength() uint16 {
 }
 
 
-func (con *EnhancedConn) SendProtobufMsg(msg *protobufs.DeviceUpdate) {
-
+func (con *EnhancedConn) SendProtobufMsg(msg proto.Message) {
 	out, err := proto.Marshal(msg)
 	if err != nil {
-		log.Printf("Failed to marshal message - not sending - error: %v\n", err)
-		return
+		log.Printf("Failed to Marshal protobuf message. Error: %v\n", err)
 	}
 
+	// Send it over the network
 	lengthMsg := make([]byte, 2)
 	binary.BigEndian.PutUint16(lengthMsg, uint16(len(out)))
 	con.Write(lengthMsg)
 	con.Write(out)
-
 }

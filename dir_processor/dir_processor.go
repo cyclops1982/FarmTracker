@@ -144,7 +144,7 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 		byteReader := bytes.NewReader(bs)
 		err = binary.Read(byteReader, binary.LittleEndian, &loraMsg)
 		if err != nil {
-			log.Printf("File '%s': Failed to unpack binary array from base64 data ('%s') into LoraMSG Structure", file, base64data);
+			log.Printf("File '%s': Failed to unpack binary array from base64 data ('%s') into LoraMSG Structure\n", file, base64data);
 			continue
 		}
 
@@ -160,17 +160,9 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 		msg.BatteryVoltage = float32(((float32(loraMsg.RawVoltage)*10) + 3000)/1000 )
 		msg.RawVoltage = uint32(loraMsg.RawVoltage)
 		
-		out, err := proto.Marshal(msg)
-		if err != nil {
-			log.Fatal("wUT", err)
-		}
-	
-		lengthMsg := make([]byte, 2)
-		binary.BigEndian.PutUint16(lengthMsg, uint16(len(out)))
-		con.Write(lengthMsg)
-		con.Write(out)
-	
+		con.SendProtobufMsg(msg)
 
+		log.Printf("File '%s' send to '%s'\n", file, con.RemoteAddr())
 	}
 }
 
