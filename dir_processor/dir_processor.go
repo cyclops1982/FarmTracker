@@ -158,7 +158,7 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 		msg.GPSCoordinates.Longitude = float64(loraMsg.Longitude)/10000000
 		msg.GPSCoordinates.Latitude = float64(loraMsg.Latitude)/10000000
 		msg.GPSCoordinates.Accuracy = 0;
-		msg.BatteryVoltage = float32(((uint32(loraMsg.RawVoltage)*10) + 3000)/1000 )
+		msg.BatteryVoltage = float32(((float32(loraMsg.RawVoltage)*10) + 3000)/1000 )
 		msg.RawVoltage = uint32(loraMsg.RawVoltage)
 		log.Printf("File '%s': %v", file, msg);
 
