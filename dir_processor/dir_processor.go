@@ -59,9 +59,9 @@ func HandleClient(con enhancedconn.EnhancedConn) {
 	var msgLength uint16
 	var err error
 
-	msgLength = con.ReadLength();
-	if msgLength == 0 {
-		log.Printf("Client '%s' did not send correct length. Dropping.", con.RemoteAddr())
+	msgLength, err = con.ReadLength();
+	if msgLength == 0 || err != nil{
+		log.Printf("Client '%s' - Couldn't read length, got %d: %v", con.RemoteAddr(), msgLength, err)
 		return; 
 	}
 

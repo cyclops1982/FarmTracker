@@ -45,8 +45,8 @@ func main() {
 	con.Write(out)
 	
 	for {
-		length := con.ReadLength();
-		if length == 0 {
+		length, err := con.ReadLength();
+		if length == 0 || err != nil {
 			log.Printf("Server didn't send us a message length.\n")
 			return; 
 		}

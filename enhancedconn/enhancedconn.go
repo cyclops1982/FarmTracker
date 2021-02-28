@@ -3,6 +3,7 @@ package enhancedconn
 import (
 	"net"
 	"log"
+	"io"
 	"time"
 	"encoding/binary"
 	proto "github.com/golang/protobuf/proto"
@@ -14,18 +15,17 @@ type EnhancedConn struct {
 
 
 func (con *EnhancedConn) ReadBytes(data []byte, timeout time.Duration) (int, error) {
-	allReadBytes := 0
 	if timeout != 0 {
 		con.SetReadDeadline(time.Now().Add(timeout * time.Second))
 		defer con.SetReadDeadline(time.Time{})
 	}
-	return io.ReadFull(data)
+	return io.ReadFull(con, data)
 }
 
 
 func (con *EnhancedConn) ReadLength() (uint16, error) {
 	data := make([]byte, 2)
-	length, err := io.ReadFull(data)
+	length, err := io.ReadFull(con, data)
 	if err != nil {
 		return 0, err
 	}
@@ -33,7 +33,7 @@ func (con *EnhancedConn) ReadLength() (uint16, error) {
 		log.Printf("Didn't read %d bytes, only got %d.\n", len(data), length)
 		return 0, err
 	}
-	return binary.BigEndian.Uint16(bytes), nil
+	return binary.BigEndian.Uint16(data), nil
 }
 
 
