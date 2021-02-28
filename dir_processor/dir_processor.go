@@ -1,22 +1,23 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"encoding/base64"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
-	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
 	"github.com/cyclops1982/farmtracker/enhancedconn"
+	loramsgs "github.com/cyclops1982/farmtracker/loramsgstructs"
 	"github.com/cyclops1982/farmtracker/protobufs"
-	"github.com/cyclops1982/farmtracker/loramsgstructs"
 	proto "github.com/golang/protobuf/proto"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )

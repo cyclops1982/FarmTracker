@@ -1,12 +1,13 @@
 package main
 
 import (
-	"log"
-	"net"
 	"encoding/binary"
 	"flag"
 	"fmt"
+	"log"
+	"net"
 	"time"
+
 	"github.com/cyclops1982/farmtracker/enhancedconn"
 	"github.com/cyclops1982/farmtracker/protobufs"
 	proto "github.com/golang/protobuf/proto"
@@ -54,7 +55,7 @@ func main() {
 		initialdata := make([]byte, length)
 		_, err = con.ReadBytes(initialdata, 5)
 		if err != nil {
-			log.Printf("Didn't receive expected amount of data.", con.RemoteAddr());
+			log.Printf("Didn't receive expected amount of data.\n");
 			return; 
 		}
 
@@ -64,7 +65,4 @@ func main() {
 		log.Printf("Message: %v\n", msg)
 
 	}
-
-	return;
-
 }
