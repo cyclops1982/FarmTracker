@@ -95,15 +95,16 @@ func main() {
 	flag.StringVar(&g_outputDir, "outputdir", "dumps/", "The path to store files. A directory structure YYYY/MM/DD/ will be created in this folder.")
 	flag.Parse()
 
-	router := mux.NewRouter()
-	router.Path("/").Queries("event", "{event}").HandlerFunc(HandleRequest)
-	router.HandleFunc("/", Handle404)
-
 	// Check base path
 	err := os.MkdirAll(g_outputDir, 0755)
 	if err != nil {
 		log.Fatal("Couldn't create outputdir.", err)
 	}
+
+	router := mux.NewRouter()
+	router.Path("/").Queries("event", "{event}").HandlerFunc(HandleRequest)
+	router.HandleFunc("/", Handle404)
+
 	log.Printf("Starting HTTP server on %s:%d\n", *ipAddress, *httpPort)
 	srv := &http.Server{
 		Handler: router,
