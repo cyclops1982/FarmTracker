@@ -1,19 +1,19 @@
 package main
 
 import (
-	"log"
-	"net"
-	"encoding/json"
-	"encoding/base64"
-	"encoding/binary"
-	"flag"
-	"fmt"
-	"github.com/cyclops1982/farmtracker/loramsgstructs"
-	"github.com/cyclops1982/farmtracker/enhancedconn"
-	"bytes"
-	"time"
 	"context"
 	"database/sql"
+	"flag"
+	"fmt"
+	"log"
+	"net"
+	"time"
+
+	"github.com/cyclops1982/farmtracker/enhancedconn"
+	loramsgs "github.com/cyclops1982/farmtracker/loramsgstructs"
+	"github.com/cyclops1982/farmtracker/protobufs"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -99,66 +99,33 @@ func main() {
 	CheckConnection(ctx, pool)
 
 	// tell the server what we want to receive.
-	unixtimebytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(unixtimebytes, uint64(*fromUnixtime))
-	con.Write(unixtimebytes)
-	con.Write([]byte("up."))
+	req := &protobufs.MessagesRequest{}
+	req.DataToGet = protobufs.MessagesRequest_LoraUpdatesV1
+	req.DataSince = timestamppb.New(time.Unix(*fromUnixtime, 0))
 
+	err = con.SendProtobufMsg(req);
+	if err != nil {
+		log.Fatalf("Couldn't send protobuf to indicate what we want to receive: %v\n", err)
+	}	
 	
+	var nbytes int
+	var msgLength uint16
 	for {
 		// Read how long our message will be.
-		msgLength := make([]byte, 2)
-		nBytes, err := con.ReadBytes(msgLength)
-		if nBytes != 2 {
-			log.Fatal("We really expect 2 bytes for a messagelength.")
-		}
-
-		// Create the buffer of the correct size and read that amount of bytes.
-		dataLength := int(binary.BigEndian.Uint16(msgLength))
-		msgData := make([]byte, dataLength)
-		nBytes, err = con.ReadBytes(msgData)
-		if err != nil {
-			log.Println("Failed to read:", err)
+		msgLength, err = con.ReadLength()
+		if err !=nil {
+			log.Printf("Failed to read message size. Skipping and waiting for next bytes. Error: %v\n", err)
 			continue
 		}
 
-		log.Printf("Received message of %d bytes. Processing.\n", dataLength)
-		// Convert received stuff to JSON.
-		//TODO: make this something more strongly typed - need to check what happens if our struct is not 100% aligned.
-		var jsonData interface{}
-		err = json.Unmarshal(msgData, &jsonData)
+		// read the actual message
+		dataBytes := make([]byte, msgLength)
+		nbytes, err = con.ReadBytes(dataBytes, 0)
 		if err != nil {
-			log.Println("Failed to parse JSON:", err)
-			continue
-		}
-		// get the properties that we'd like to have.
-		realData := jsonData.(map[string]interface{})
-		devEUI, ok := realData["devEUI"].(string)
-		if ok == false {
-			log.Println("Failed to convert data to string. Skipping.")
-			continue
-		}
-		base64data, ok := realData["data"].(string)
-		if ok == false {
-			log.Println("Failed to convert data to string. Skipping.")
+			log.Printf("Read %d of %d expected bytes. Skipping to next message. Error: %v.\n", nbytes, msgLength, err)
 			continue
 		}
 
-		// convert the base64 string to a []byte
-		bs, err := base64.StdEncoding.DecodeString(base64data)
-		if err != nil {
-			log.Printf("Failed to get decode base64 string '%s'. Skipping.\n", base64data)
-			continue
-		}
-		var loraMsg loramsgs.SodaqUniversalTracker
-		byteReader := bytes.NewReader(bs)
-		err = binary.Read(byteReader, binary.LittleEndian, &loraMsg)
-		if err != nil {
-			log.Printf("Couldn't unpack binary array from base64 data ('%s') into Lora Msg Struct. Skipping.\n", base64data)
-			continue
-		}
-		log.Printf("Adding LoraMSG from %d (unixtime) to db\n", loraMsg.Unixtime)
-		go AddRecords(pool, devEUI, &loraMsg)
-
+		
 	}
 }
